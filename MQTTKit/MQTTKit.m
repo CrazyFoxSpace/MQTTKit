@@ -20,6 +20,24 @@
 
 #endif
 
+/* 
+ Log types
+ 
+ MOSQ_LOG_NONE 0x00
+ MOSQ_LOG_INFO 0x01
+ MOSQ_LOG_NOTICE 0x02
+ MOSQ_LOG_WARNING 0x04
+ MOSQ_LOG_ERR 0x08
+ MOSQ_LOG_DEBUG 0x10
+ MOSQ_LOG_SUBSCRIBE 0x20
+ MOSQ_LOG_UNSUBSCRIBE 0x40
+ MOSQ_LOG_WEBSOCKETS 0x80
+ MOSQ_LOG_ALL 0xFFFF
+ 
+ */
+
+#define MOSQ_LOG_LEVEL 0x01 || 0x02
+
 #pragma mark - MQTT Message
 
 @interface MQTTMessage()
@@ -162,6 +180,13 @@ static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id)
     }
 }
 
+static void on_log(struct mosquitto *mosq, void *userdata, int level, const char *str)
+{
+    int rc = level & MOSQ_LOG_LEVEL;
+    if (rc){
+        LogDebug(@"%@",[NSString stringWithUTF8String:str]);
+    }
+}
 
 // Initialize is called just before the first object is allocated
 + (void)initialize {
@@ -182,7 +207,7 @@ static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id)
 - (MQTTClient*) initWithClientId: (NSString *)clientId
                     cleanSession: (BOOL )cleanSession
 {
-    if ((self = [super init])) {
+    if (self = [super init]) {
         self.clientID = clientId;
         self.port = 1883;
         self.keepAlive = 60;
@@ -204,7 +229,8 @@ static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id)
         mosquitto_message_callback_set(mosq, on_message);
         mosquitto_subscribe_callback_set(mosq, on_subscribe);
         mosquitto_unsubscribe_callback_set(mosq, on_unsubscribe);
-
+        mosquitto_log_callback_set(mosq, on_log);
+        
         self.queue = dispatch_queue_create(cstrClientId, NULL);
     }
     return self;
