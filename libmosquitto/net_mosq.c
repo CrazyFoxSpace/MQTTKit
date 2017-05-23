@@ -478,6 +478,10 @@ int mosquitto__socket_connect_tls(struct mosquitto *mosq)
 			mosq->want_write = true;
 			mosq->want_connect = true;
 		}else{
+            char err_msg[1024];
+            ERR_error_string_n(ERR_get_error(), err_msg, sizeof(err_msg));
+            _mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "SSL Connect Error: %s", err_msg);
+            
 			COMPAT_CLOSE(mosq->sock);
 			mosq->sock = INVALID_SOCKET;
 			return MOSQ_ERR_TLS;

@@ -38,6 +38,14 @@
 
 #define MOSQ_LOG_LEVEL 0x01 || 0x02
 
+#ifdef WITH_TLS
+
+NSString *const MQTTKitTLSVersion1 = @"tlsv1";
+NSString *const MQTTKitTLSVersion1_1 = @"tlsv1.1";
+NSString *const MQTTKitTLSVersion1_2 = @"tlsv1.2";
+
+#endif
+
 #pragma mark - MQTT Message
 
 @interface MQTTMessage()
@@ -220,6 +228,14 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
         self.publishHandlers = [[NSMutableDictionary alloc] init];
         self.cleanSession = cleanSession;
 
+#ifdef WITH_TLS
+        
+        self.tlsVersion = MQTTKitTLSVersion1_2;
+        self.tlsInsecure = NO;
+        self.tlsPeerCertVerify = NO;
+        
+#endif
+        
         const char* cstrClientId = [self.clientID cStringUsingEncoding:NSUTF8StringEncoding];
 
         mosq = mosquitto_new(cstrClientId, self.cleanSession, (__bridge void *)(self));

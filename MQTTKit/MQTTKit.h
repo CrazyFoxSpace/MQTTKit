@@ -22,6 +22,14 @@ typedef enum MQTTQualityOfService : NSUInteger {
     ExactlyOnce
 } MQTTQualityOfService;
 
+#ifdef WITH_TLS
+
+extern NSString *const MQTTKitTLSVersion1;
+extern NSString *const MQTTKitTLSVersion1_1;
+extern NSString *const MQTTKitTLSVersion1_2;
+
+#endif
+
 #pragma mark - MQTT Message
 
 @interface MQTTMessage : NSObject
@@ -60,6 +68,36 @@ typedef void (^MQTTDisconnectionHandler)(NSUInteger code);
 @property (readonly, assign) BOOL connected;
 @property (nonatomic, copy) MQTTMessageHandler messageHandler;
 @property (nonatomic, copy) MQTTDisconnectionHandler disconnectionHandler;
+#ifdef WITH_TLS
+/* Path for ca file which verify the server certificate */
+@property (nonatomic, copy) NSString *tlsCafile;
+/* Path for client certificate. If tlsCerKeyPath is NULL it will not work */
+@property (nonatomic, copy) NSString *tlsCerPath;
+/* Path for client certificate key. If tlsCerPath is NULL it will not work */
+@property (nonatomic, copy) NSString *tlsCerKeyPath;
+/* Default is tlsv1.2 */
+@property (nonatomic, copy) NSString *tlsVersion;
+/* List for ciphers that client support */
+@property (nonatomic, copy) NSString *tlsCiphers;
+/* If YES, client will verify server certificate */
+@property (nonatomic, assign) BOOL tlsPeerCertVerify;
+/* Preverify should have already checked expiry, revocation.
+ * If tlsInsecure is false we need to verify the hostname otherwise return preverify result directly*/
+@property (nonatomic, assign) BOOL tlsInsecure;
+
+/* If you want to use pre-share key this part function, SET MACRO REAL_WITH_TLS_PSK = 1 */
+/*
+ If tlsPsk is not NULL, client will set PSK client callback
+ default is NULL
+ 
+ Document:
+ A client application must provide a callback function which is called when the client is sending the ClientKeyExchange message to the server.
+ 
+ The purpose of the callback function is to select the PSK identity and the pre-shared key to use during the connection setup phase.
+ */
+@property (nonatomic, copy) NSString *tlsPsk;
+@property (nonatomic, copy) NSString *tlsPskIdentity;
+#endif
 
 + (void) initialize;
 + (NSString*) version;

@@ -60,7 +60,8 @@ int _mosquitto_server_certificate_verify(int preverify_ok, X509_STORE_CTX *ctx)
 #if defined(WITH_BROKER)
 			return _mosquitto_verify_certificate_hostname(cert, mosq->bridge->addresses[mosq->bridge->cur_address].address);
 #else
-			return _mosquitto_verify_certificate_hostname(cert, mosq->host);
+//			return _mosquitto_verify_certificate_hostname(cert, mosq->host);
+            return X509_check_host(cert, mosq->host, sizeof(mosq->host), 0, NULL);
 #endif
 		}else{
 			return preverify_ok;
