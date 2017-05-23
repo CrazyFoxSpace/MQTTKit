@@ -287,6 +287,29 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     mosquitto_username_pw_set(mosq, cstrUsername, cstrPassword);
     mosquitto_reconnect_delay_set(mosq, self.reconnectDelay, self.reconnectDelayMax, self.reconnectExponentialBackoff);
 
+#ifdef WITH_TLS
+    const char *cstrTLSCafile = NULL, *cstrTLSCerPath = NULL, *cstrTLSCerKeyPath = NULL;
+    
+    if (self.tlsCafile)
+        cstrTLSCafile = [self.tlsCafile cStringUsingEncoding:NSUTF8StringEncoding];
+    if (self.tlsCerPath)
+        cstrTLSCerPath = [self.tlsCerPath cStringUsingEncoding:NSUTF8StringEncoding];
+    if (self.tlsCerKeyPath)
+        cstrTLSCerKeyPath = [self.tlsCerKeyPath cStringUsingEncoding:NSUTF8StringEncoding];
+    
+    mosquitto_tls_set(mosq, cstrTLSCafile, NULL, cstrTLSCerPath, cstrTLSCerKeyPath, NULL);
+    
+    const char *cstrTLSVersion = NULL, *cstrTLSCiphers = NULL;
+    if (self.tlsVersion)
+        cstrTLSVersion = [self.tlsVersion cStringUsingEncoding:NSUTF8StringEncoding];
+    if (self.tlsCiphers)
+        cstrTLSCiphers = [self.tlsCiphers cStringUsingEncoding:NSUTF8StringEncoding];
+    
+    mosquitto_tls_opts_set(mosq, self.tlsPeerCertVerify?1:0, cstrTLSVersion, cstrTLSCiphers);
+    
+    mosquitto_tls_insecure_set(mosq, self.tlsInsecure?true:false);
+#endif
+    
     mosquitto_connect(mosq, cstrHost, self.port, self.keepAlive);
     
     dispatch_async(self.queue, ^{
