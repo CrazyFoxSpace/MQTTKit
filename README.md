@@ -70,7 +70,7 @@ MQTTClient *client = [[MQTTClient alloc] initWithClientId:clientID];
 
 *`Mosquitto` support TLS/SSL by `OpenSSL` but it's removed in iOS. So you need compile OpenSSL for iOS Devices (iPhone, iPad, iPod Touch, AppleTV)  by yurself. -> [OpenSSL-for-iPhone](https://github.com/x2on/OpenSSL-for-iPhone)*
 
-* Mutual authentication
+* One way authentication
 
 ```objc
 self.client.tlsCafile = [[NSBundle mainBundle] pathForResource:@"server" ofType:@"crt"];
@@ -87,7 +87,7 @@ self.client.tlsCafile = [[NSBundle mainBundle] pathForResource:@"server" ofType:
 }];
 ```
 
-* One way authentication
+* Mutual authentication
 
 ```objc
 client.tlsCerPath = [[NSBundle mainBundle] pathForResource:@"client" ofType:@"crt"];
