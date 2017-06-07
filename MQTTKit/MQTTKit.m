@@ -264,6 +264,7 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
 
 - (void) dealloc {
     if (mosq) {
+        mosquitto_lib_cleanup();
         mosquitto_destroy(mosq);
         mosq = NULL;
     }
