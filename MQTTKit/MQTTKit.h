@@ -106,34 +106,34 @@ typedef void (^MQTTDisconnectionHandler)(NSUInteger code);
 - (MQTTClient*) initWithClientId: (NSString *)clientId
                     cleanSession: (BOOL )cleanSession;
 
-- (void) setMaxInflightMessages:(NSUInteger)maxInflightMessages;
+- (int) setMaxInflightMessages:(NSUInteger)maxInflightMessages;
 - (void) setMessageRetry: (NSUInteger)seconds;
 
 #pragma mark - Connection
 
-- (void) connectWithCompletionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler;
-- (void) connectToHost: (NSString*)host
+- (int) connectWithCompletionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler;
+- (int) connectToHost: (NSString*)host
      completionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler;
-- (void) disconnectWithCompletionHandler:(MQTTDisconnectionHandler)completionHandler;
-- (void) reconnect;
-- (void)setWillData:(NSData *)payload
+- (int) disconnectWithCompletionHandler:(MQTTDisconnectionHandler)completionHandler;
+- (int) reconnect;
+- (int)setWillData:(NSData *)payload
             toTopic:(NSString *)willTopic
             withQos:(MQTTQualityOfService)willQos
              retain:(BOOL)retain;
-- (void)setWill:(NSString *)payload
+- (int)setWill:(NSString *)payload
         toTopic:(NSString *)willTopic
         withQos:(MQTTQualityOfService)willQos
          retain:(BOOL)retain;
-- (void)clearWill;
+- (int)clearWill;
 
 #pragma mark - Publish
 
-- (void)publishData:(NSData *)payload
+- (int)publishData:(NSData *)payload
             toTopic:(NSString *)topic
             withQos:(MQTTQualityOfService)qos
              retain:(BOOL)retain
   completionHandler:(void (^)(int mid))completionHandler;
-- (void)publishString:(NSString *)payload
+- (int)publishString:(NSString *)payload
               toTopic:(NSString *)topic
               withQos:(MQTTQualityOfService)qos
                retain:(BOOL)retain
@@ -141,12 +141,12 @@ typedef void (^MQTTDisconnectionHandler)(NSUInteger code);
 
 #pragma mark - Subscribe
 
-- (void)subscribe:(NSString *)topic
+- (int)subscribe:(NSString *)topic
 withCompletionHandler:(MQTTSubscriptionCompletionHandler)completionHandler;
-- (void)subscribe:(NSString *)topic
+- (int)subscribe:(NSString *)topic
           withQos:(MQTTQualityOfService)qos
 completionHandler:(MQTTSubscriptionCompletionHandler)completionHandler;
-- (void)unsubscribe: (NSString *)topic
+- (int)unsubscribe: (NSString *)topic
 withCompletionHandler:(void (^)(void))completionHandler;
 
 @end

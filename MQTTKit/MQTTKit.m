@@ -64,8 +64,7 @@ NSString *const MQTTKitTLSVersion1_2 = @"tlsv1.2";
            payload:(NSData *)payload
                qos:(MQTTQualityOfService)qos
             retain:(BOOL)retained
-               mid:(short)mid
-{
+               mid:(short)mid{
     if ((self = [super init])) {
         self.topic = topic;
         self.payload = payload;
@@ -104,8 +103,7 @@ NSString *const MQTTKitTLSVersion1_2 = @"tlsv1.2";
 
 #pragma mark - mosquitto callback methods
 
-static void on_connect(struct mosquitto *mosq, void *obj, int rc)
-{
+static void on_connect(struct mosquitto *mosq, void *obj, int rc){
     MQTTClient* client = (__bridge MQTTClient*)obj;
     LogDebug(@"[%@] on_connect rc = %d", client.clientID, rc);
     client.connected = (rc == ConnectionAccepted);
@@ -114,8 +112,7 @@ static void on_connect(struct mosquitto *mosq, void *obj, int rc)
     }
 }
 
-static void on_disconnect(struct mosquitto *mosq, void *obj, int rc)
-{
+static void on_disconnect(struct mosquitto *mosq, void *obj, int rc){
     MQTTClient* client = (__bridge MQTTClient*)obj;
     LogDebug(@"[%@] on_disconnect rc = %d", client.clientID, rc);
     [client.publishHandlers removeAllObjects];
@@ -128,8 +125,7 @@ static void on_disconnect(struct mosquitto *mosq, void *obj, int rc)
     }
 }
 
-static void on_publish(struct mosquitto *mosq, void *obj, int message_id)
-{
+static void on_publish(struct mosquitto *mosq, void *obj, int message_id){
     MQTTClient* client = (__bridge MQTTClient*)obj;
     NSNumber *mid = [NSNumber numberWithInt:message_id];
     void (^handler)(int) = [client.publishHandlers objectForKey:mid];
@@ -141,8 +137,7 @@ static void on_publish(struct mosquitto *mosq, void *obj, int message_id)
     }
 }
 
-static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *mosq_msg)
-{
+static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *mosq_msg){
     // Ensure these objects are cleaned up quickly by an autorelease pool.
     // The GCD autorelease pool isn't guaranteed to clean this up in any amount of time.
     // Source: https://developer.apple.com/library/ios/DOCUMENTATION/General/Conceptual/ConcurrencyProgrammingGuide/OperationQueues/OperationQueues.html#//apple_ref/doc/uid/TP40008091-CH102-SW1
@@ -162,8 +157,7 @@ static void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto
     }
 }
 
-static void on_subscribe(struct mosquitto *mosq, void *obj, int message_id, int qos_count, const int *granted_qos)
-{
+static void on_subscribe(struct mosquitto *mosq, void *obj, int message_id, int qos_count, const int *granted_qos){
     MQTTClient* client = (__bridge MQTTClient*)obj;
     NSNumber *mid = [NSNumber numberWithInt:message_id];
     MQTTSubscriptionCompletionHandler handler = [client.subscriptionHandlers objectForKey:mid];
@@ -177,8 +171,7 @@ static void on_subscribe(struct mosquitto *mosq, void *obj, int message_id, int 
     }
 }
 
-static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id)
-{
+static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id){
     MQTTClient* client = (__bridge MQTTClient*)obj;
     NSNumber *mid = [NSNumber numberWithInt:message_id];
     void (^completionHandler)(void) = [client.unsubscriptionHandlers objectForKey:mid];
@@ -188,8 +181,7 @@ static void on_unsubscribe(struct mosquitto *mosq, void *obj, int message_id)
     }
 }
 
-static void on_log(struct mosquitto *mosq, void *userdata, int level, const char *str)
-{
+static void on_log(struct mosquitto *mosq, void *userdata, int level, const char *str){
     int rc = level & MOSQ_LOG_LEVEL;
     if (rc){
         LogDebug(@"%@",[NSString stringWithUTF8String:str]);
@@ -207,14 +199,12 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     return [NSString stringWithFormat:@"%d.%d.%d", major, minor, revision];
 }
 
-- (MQTTClient*) initWithClientId: (NSString*) clientId
-{
+- (MQTTClient*) initWithClientId: (NSString*) clientId{
     return [self initWithClientId:clientId cleanSession:YES];
 }
 
 - (MQTTClient*) initWithClientId: (NSString *)clientId
-                    cleanSession: (BOOL )cleanSession
-{
+                    cleanSession: (BOOL )cleanSession{
     if (self = [super init]) {
         self.clientID = clientId;
         self.port = 1883;
@@ -229,7 +219,7 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
         self.cleanSession = cleanSession;
 
 #ifdef WITH_TLS
-        
+    
         self.tlsVersion = MQTTKitTLSVersion1_2;
         self.tlsInsecure = NO;
         self.tlsPeerCertVerify = NO;
@@ -252,13 +242,11 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     return self;
 }
 
-- (void) setMaxInflightMessages:(NSUInteger)maxInflightMessages
-{
-    mosquitto_max_inflight_messages_set(mosq, (unsigned int)maxInflightMessages);
+- (int) setMaxInflightMessages:(NSUInteger)maxInflightMessages{
+    return mosquitto_max_inflight_messages_set(mosq, (unsigned int)maxInflightMessages);
 }
 
-- (void) setMessageRetry: (NSUInteger)seconds
-{
+- (void) setMessageRetry: (NSUInteger)seconds{
     mosquitto_message_retry_set(mosq, (unsigned int)seconds);
 }
 
@@ -272,9 +260,11 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
 
 #pragma mark - Connection
 
-- (void) connectWithCompletionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler {
+- (int) connectWithCompletionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler {
     self.connectionCompletionHandler = completionHandler;
 
+    int res;
+    
     const char *cstrHost = [self.host cStringUsingEncoding:NSASCIIStringEncoding];
     const char *cstrUsername = NULL, *cstrPassword = NULL;
     
@@ -284,9 +274,13 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     if (self.password)
         cstrPassword = [self.password cStringUsingEncoding:NSUTF8StringEncoding];
     
-    // FIXME: check for errors
-    mosquitto_username_pw_set(mosq, cstrUsername, cstrPassword);
-    mosquitto_reconnect_delay_set(mosq, self.reconnectDelay, self.reconnectDelayMax, self.reconnectExponentialBackoff);
+    
+    
+    res = mosquitto_username_pw_set(mosq, cstrUsername, cstrPassword);
+    res *= 10;
+    
+    res += mosquitto_reconnect_delay_set(mosq, self.reconnectDelay, self.reconnectDelayMax, self.reconnectExponentialBackoff);
+    res *= 10;
 
 #ifdef WITH_TLS
     const char *cstrTLSCafile = NULL, *cstrTLSCerPath = NULL, *cstrTLSCerKeyPath = NULL;
@@ -298,7 +292,8 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     if (self.tlsCerKeyPath)
         cstrTLSCerKeyPath = [self.tlsCerKeyPath cStringUsingEncoding:NSUTF8StringEncoding];
     
-    mosquitto_tls_set(mosq, cstrTLSCafile, NULL, cstrTLSCerPath, cstrTLSCerKeyPath, NULL);
+    res += mosquitto_tls_set(mosq, cstrTLSCafile, NULL, cstrTLSCerPath, cstrTLSCerKeyPath, NULL);
+    res *= 100;
     
     const char *cstrTLSVersion = NULL, *cstrTLSCiphers = NULL;
     if (self.tlsVersion)
@@ -306,65 +301,72 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     if (self.tlsCiphers)
         cstrTLSCiphers = [self.tlsCiphers cStringUsingEncoding:NSUTF8StringEncoding];
     
-    mosquitto_tls_opts_set(mosq, self.tlsPeerCertVerify?1:0, cstrTLSVersion, cstrTLSCiphers);
+    res += mosquitto_tls_opts_set(mosq, self.tlsPeerCertVerify?1:0, cstrTLSVersion, cstrTLSCiphers);
+    res *= 10;
     
-    mosquitto_tls_insecure_set(mosq, self.tlsInsecure?true:false);
+    res += mosquitto_tls_insecure_set(mosq, self.tlsInsecure?true:false);
 #endif
     
-    mosquitto_connect(mosq, cstrHost, self.port, self.keepAlive);
+    res += mosquitto_connect(mosq, cstrHost, self.port, self.keepAlive);
+    res *= 10;
     
-    dispatch_async(self.queue, ^{
-        LogDebug(@"start mosquitto loop on %@", self.queue);
-        mosquitto_loop_forever(mosq, -1, 1);
-        LogDebug(@"end mosquitto loop on %@", self.queue);
-    });
+    if (!res)
+    {
+        dispatch_async(self.queue, ^{
+            LogDebug(@"start mosquitto loop on %@", self.queue);
+            mosquitto_loop_forever(mosq, -1, 1);
+            LogDebug(@"end mosquitto loop on %@", self.queue);
+        });
+    }
+  
+    return res;
 }
 
-- (void)connectToHost:(NSString *)host
+- (int)connectToHost:(NSString *)host
     completionHandler:(void (^)(MQTTConnectionReturnCode code))completionHandler {
     self.host = host;
-    [self connectWithCompletionHandler:completionHandler];
+    return [self connectWithCompletionHandler:completionHandler];
 }
 
-- (void) reconnect {
-    mosquitto_reconnect(mosq);
+- (int) reconnect {
+    return mosquitto_reconnect(mosq);
 }
 
-- (void) disconnectWithCompletionHandler:(MQTTDisconnectionHandler)completionHandler {
+- (int) disconnectWithCompletionHandler:(MQTTDisconnectionHandler)completionHandler {
     if (completionHandler) {
         self.disconnectionHandler = completionHandler;
     }
-    mosquitto_disconnect(mosq);
+    return mosquitto_disconnect(mosq);
 }
 
-- (void)setWillData:(NSData *)payload
+- (int)setWillData:(NSData *)payload
             toTopic:(NSString *)willTopic
             withQos:(MQTTQualityOfService)willQos
              retain:(BOOL)retain
 {
     const char* cstrTopic = [willTopic cStringUsingEncoding:NSUTF8StringEncoding];
-    mosquitto_will_set(mosq, cstrTopic, (int)payload.length, payload.bytes, willQos, retain);
+    return mosquitto_will_set(mosq, cstrTopic, (int)payload.length, payload.bytes, willQos, retain);
 }
 
-- (void)setWill:(NSString *)payload
+- (int)setWill:(NSString *)payload
         toTopic:(NSString *)willTopic
         withQos:(MQTTQualityOfService)willQos
          retain:(BOOL)retain;
 {
-    [self setWillData:[payload dataUsingEncoding:NSUTF8StringEncoding]
+    return [self setWillData:[payload dataUsingEncoding:NSUTF8StringEncoding]
               toTopic:willTopic
               withQos:willQos
                retain:retain];
 }
 
-- (void)clearWill
+- (int)clearWill
 {
-    mosquitto_will_clear(mosq);
+    return mosquitto_will_clear(mosq);
 }
 
 #pragma mark - Publish
 
-- (void)publishData:(NSData *)payload
+- (int)publishData:(NSData *)payload
             toTopic:(NSString *)topic
             withQos:(MQTTQualityOfService)qos
              retain:(BOOL)retain
@@ -373,23 +375,27 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
     if (qos == 0 && completionHandler) {
         [self.publishHandlers setObject:completionHandler forKey:[NSNumber numberWithInt:0]];
     }
-    int mid;
-    mosquitto_publish(mosq, &mid, cstrTopic, (int)payload.length, payload.bytes, qos, retain);
-    if (completionHandler) {
-        if (qos == 0) {
-            completionHandler(mid);
-        } else {
-            [self.publishHandlers setObject:completionHandler forKey:[NSNumber numberWithInt:mid]];
+    int mid, res;
+    res = mosquitto_publish(mosq, &mid, cstrTopic, (int)payload.length, payload.bytes, qos, retain);
+
+    if (!res){
+        if (completionHandler) {
+            if (qos == 0) {
+                completionHandler(mid);
+            } else {
+                [self.publishHandlers setObject:completionHandler forKey:[NSNumber numberWithInt:mid]];
+            }
         }
     }
+    return res;
 }
 
-- (void)publishString:(NSString *)payload
+- (int)publishString:(NSString *)payload
               toTopic:(NSString *)topic
               withQos:(MQTTQualityOfService)qos
                retain:(BOOL)retain
     completionHandler:(void (^)(int mid))completionHandler; {
-    [self publishData:[payload dataUsingEncoding:NSUTF8StringEncoding]
+    return [self publishData:[payload dataUsingEncoding:NSUTF8StringEncoding]
               toTopic:topic
               withQos:qos
                retain:retain
@@ -398,28 +404,34 @@ static void on_log(struct mosquitto *mosq, void *userdata, int level, const char
 
 #pragma mark - Subscribe
 
-- (void)subscribe: (NSString *)topic withCompletionHandler:(MQTTSubscriptionCompletionHandler)completionHandler {
-    [self subscribe:topic withQos:0 completionHandler:completionHandler];
+- (int)subscribe: (NSString *)topic withCompletionHandler:(MQTTSubscriptionCompletionHandler)completionHandler {
+    return [self subscribe:topic withQos:0 completionHandler:completionHandler];
 }
 
-- (void)subscribe: (NSString *)topic withQos:(MQTTQualityOfService)qos completionHandler:(MQTTSubscriptionCompletionHandler)completionHandler
+- (int)subscribe: (NSString *)topic withQos:(MQTTQualityOfService)qos completionHandler:(MQTTSubscriptionCompletionHandler)completionHandler
 {
     const char* cstrTopic = [topic cStringUsingEncoding:NSUTF8StringEncoding];
-    int mid;
-    mosquitto_subscribe(mosq, &mid, cstrTopic, qos);
-    if (completionHandler) {
-        [self.subscriptionHandlers setObject:[completionHandler copy] forKey:[NSNumber numberWithInteger:mid]];
+    int mid, res;
+    res = mosquitto_subscribe(mosq, &mid, cstrTopic, qos);
+    if (!res){
+        if (completionHandler) {
+            [self.subscriptionHandlers setObject:[completionHandler copy] forKey:[NSNumber numberWithInteger:mid]];
+        }
     }
+    return res;
 }
 
-- (void)unsubscribe: (NSString *)topic withCompletionHandler:(void (^)(void))completionHandler
+- (int)unsubscribe: (NSString *)topic withCompletionHandler:(void (^)(void))completionHandler
 {
     const char* cstrTopic = [topic cStringUsingEncoding:NSUTF8StringEncoding];
-    int mid;
-    mosquitto_unsubscribe(mosq, &mid, cstrTopic);
-    if (completionHandler) {
-        [self.unsubscriptionHandlers setObject:[completionHandler copy] forKey:[NSNumber numberWithInteger:mid]];
+    int mid, res;
+    res = mosquitto_unsubscribe(mosq, &mid, cstrTopic);
+    if (!res){
+        if (completionHandler) {
+            [self.unsubscriptionHandlers setObject:[completionHandler copy] forKey:[NSNumber numberWithInteger:mid]];
+        }
     }
+    return res;
 }
 
 @end
